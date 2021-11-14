@@ -1,5 +1,6 @@
 import { CLOCK_INTERVAL, MEMORY_OFFSET, MEMORY_SIZE } from '../constants';
 import { get3N, hex } from '../util/number';
+import { Timer } from './timer';
 
 export default class CPU {
   private readonly memory: Uint8Array;
@@ -23,12 +24,18 @@ export default class CPU {
    */
   private sp: Uint8;
 
+  private delayTimer: Timer;
+
+  private soundTimer: Timer;
+
   private nextTick: number;
 
   constructor() {
     this.memory = new Uint8Array(MEMORY_SIZE);
     this.registers = new Uint8Array(0x10);
     this.stack = new Uint16Array(0x10);
+    this.delayTimer = new Timer();
+    this.soundTimer = new Timer();
 
     this.tick = this.tick.bind(this);
   }
@@ -196,20 +203,17 @@ export default class CPU {
         const x: Uint4 = instr1 & 0xf;
         switch (instr2) {
           case 0x07: // Fx07 - LD Vx, DT
-            // TODO
-            this.failOnInstruction(this.pc - 2, instr1, instr2);
+            this.registers[x] = this.delayTimer.get();
             break;
           case 0x0a: // Fx0A - LD Vx, K
             // TODO
             this.failOnInstruction(this.pc - 2, instr1, instr2);
             break;
           case 0x15: // Fx15 - LD DT, Vx
-            // TODO
-            this.failOnInstruction(this.pc - 2, instr1, instr2);
+            this.delayTimer.set(this.registers[x]);
             break;
           case 0x18: // Fx18 - LD ST, Vx
-            // TODO
-            this.failOnInstruction(this.pc - 2, instr1, instr2);
+            this.soundTimer.set(this.registers[x]);
             break;
           case 0x1e: // Fx1E - ADD I, Vx
             this.regI += this.registers[x];
