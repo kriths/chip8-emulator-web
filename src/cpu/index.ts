@@ -6,6 +6,7 @@ import { Timer } from './timer';
 import { $ } from '../util/html';
 import { PIXEL_SET, PIXEL_UNSET } from '../util/color';
 import FONT_SPRITES from './sprite';
+import Keyboard from './keyboard';
 
 function enableControls(running: boolean) {
   if (running) {
@@ -32,6 +33,12 @@ export default class CPU {
 
   private readonly pixelsY: number;
 
+  private readonly delayTimer: Timer;
+
+  private readonly soundTimer: Timer;
+
+  private readonly keyboard: Keyboard;
+
   /**
    * Generic register used to store memory addresses
    */
@@ -47,10 +54,6 @@ export default class CPU {
    */
   private sp: Uint8;
 
-  private delayTimer: Timer;
-
-  private soundTimer: Timer;
-
   private nextTick: number;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -64,6 +67,7 @@ export default class CPU {
     this.stack = new Uint16Array(0x10);
     this.delayTimer = new Timer();
     this.soundTimer = new Timer();
+    this.keyboard = new Keyboard();
     this.reset();
     this.dumpMemory();
 
@@ -90,8 +94,6 @@ export default class CPU {
     const instr1: Uint8 = this.memory[this.pc];
     const instr2: Uint8 = this.memory[this.pc + 1];
     this.pc += 2;
-
-    console.log(`Running 0x${hex(this.pc - 2, 4)}: ${hex(instr1)}${hex(instr2)}`);
 
     const instrClass: Uint4 = instr1 >> 4;
     switch (instrClass) {
@@ -232,15 +234,18 @@ export default class CPU {
         break;
       }
       case 0xe: { // Keyboard listeners
+        const x: Uint4 = instr1 & 0xf;
         switch (instr2) {
           case 0x9e: // Ex9E - SKP Vx
-            // TODO
-            this.failOnInstruction(this.pc - 2, instr1, instr2);
-            return;
+            if (this.keyboard.isPressed(x)) {
+              this.pc += 2;
+            }
+            break;
           case 0xa1: // ExA1 - SKNP Vx
-            // TODO
-            this.failOnInstruction(this.pc - 2, instr1, instr2);
-            return;
+            if (!this.keyboard.isPressed(x)) {
+              this.pc += 2;
+            }
+            break;
           default:
             this.failOnInstruction(this.pc - 2, instr1, instr2);
             return;
@@ -254,8 +259,10 @@ export default class CPU {
             this.registers[x] = this.delayTimer.get();
             break;
           case 0x0a: // Fx0A - LD Vx, K
-            // TODO
-            this.failOnInstruction(this.pc - 2, instr1, instr2);
+            this.keyboard.waitForKeypress((key) => {
+              this.registers[x] = key;
+              this.tick();
+            });
             return;
           case 0x15: // Fx15 - LD DT, Vx
             this.delayTimer.set(this.registers[x]);
