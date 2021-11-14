@@ -11,9 +11,8 @@ function displayLoadStateResult(success: boolean) {
   $('loaded-error-indicator').style.display = success ? 'none' : 'flex';
 }
 
-// Setup button listeners
-$('file-input').onchange = (e) => {
-  const fileInput = e.currentTarget as HTMLInputElement;
+function loadFile() {
+  const fileInput = $('file-input') as HTMLInputElement;
   const fileList = fileInput.files;
   if (fileList.length === 0) {
     displayLoadStateResult(false);
@@ -32,17 +31,16 @@ $('file-input').onchange = (e) => {
     const data = new Uint8Array(buffer);
     cpu.loadExecutable(data);
     displayLoadStateResult(true);
+    $('reload').removeAttribute('disabled');
   };
   fileReader.onerror = () => {
     displayLoadStateResult(false);
   };
   fileReader.readAsArrayBuffer(executable);
-};
+}
 
-$('play').onclick = () => {
-  cpu.run();
-};
-
-$('pause').onclick = () => {
-  cpu.pause();
-};
+// Setup button listeners
+$('file-input').onchange = () => loadFile();
+$('reload').onclick = () => loadFile();
+$('play').onclick = () => cpu.run();
+$('pause').onclick = () => cpu.pause();
