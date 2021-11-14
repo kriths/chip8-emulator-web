@@ -4,11 +4,94 @@
   <meta charset="utf-8">
   <title>CHIP8 Emulator</title>
 </head>
-<body class="antialiased bg-gray-800">
-<canvas id="screen" width="64" height="32" class="bg-black"></canvas>
+<body class="antialiased bg-gray-800 text-white">
+<h1>CHIP8 Emulator</h1>
+<div class="flex justify-around items-center">
+  <div class="p-4 rounded-xl bg-black">
+    <canvas id="screen" width="640" height="320"></canvas>
+  </div>
 
-<input id="file-input" type="file" />
-<button id="load-file" type="button">Load</button>
-<button id="pause" type="button">Pause</button>
+  <div class="space-y-10">
+    <div class="flex flex-col items-center space-y-2">
+      <label class="p-4 border border-gray-500 cursor-pointer shadow-lg rounded hover:bg-gray-700 transition">
+        <i class="bi bi-upload"></i>
+        Select executable...
+        <input id="file-input" type="file" class="hidden" />
+      </label>
+      <div id="loaded-success-indicator"
+           class="hidden px-4 py-1 border border-green-800 text-green-800 rounded-full font-bold">
+        Executable loaded to memory
+      </div>
+      <div id="loaded-error-indicator"
+           class="hidden px-4 py-1 border border-red-800 text-red-800 rounded-full font-bold">
+        Failed to load executable
+      </div>
+    </div>
+    <div class="flex justify-around">
+      <button id="pause" type="button" class="flex flex-col disabled:opacity-50" disabled>
+        <i class="bi bi-pause-circle text-3xl"></i>
+        <span>Pause</span>
+      </button>
+      <button id="play" type="button" class="flex flex-col disabled:opacity-50" disabled>
+        <i class="bi bi-play-circle text-3xl"></i>
+        <span>Play</span>
+      ️</button>
+    </div>
+  </div>
+</div>
+<div>
+  <div class="flex justify-around">
+    <div>
+      <span>PC</span>
+      <span id="debug-pc"></span>
+    </div>
+    <div>
+      <span>SP</span>
+      <span id="debug-sp"></span>
+    </div>
+    <div>
+      <span>Delay Timer</span>
+      <span id="debug-dt"></span>
+    </div>
+    <div>
+      <span>Sound Timer</span>
+      <span id="debug-st"></span>
+    </div>
+  </div>
+  <div class="grid grid-flow-col grid-rows-2 justify-items-center">
+    <span>V0</span>
+    <span id="debug-reg-0"></span>
+    <span>V1</span>
+    <span id="debug-reg-1"></span>
+    <span>V2</span>
+    <span id="debug-reg-2"></span>
+    <span>V3</span>
+    <span id="debug-reg-3"></span>
+    <span>V4</span>
+    <span id="debug-reg-4"></span>
+    <span>V5</span>
+    <span id="debug-reg-5"></span>
+    <span>V6</span>
+    <span id="debug-reg-6"></span>
+    <span>V7</span>
+    <span id="debug-reg-7"></span>
+    <span>V8</span>
+    <span id="debug-reg-8"></span>
+    <span>V9</span>
+    <span id="debug-reg-9"></span>
+    <span>V10</span>
+    <span id="debug-reg-10"></span>
+    <span>V11</span>
+    <span id="debug-reg-11"></span>
+    <span>V12</span>
+    <span id="debug-reg-12"></span>
+    <span>V13</span>
+    <span id="debug-reg-13"></span>
+    <span>V14</span>
+    <span id="debug-reg-14"></span>
+    <span>V15</span>
+    <span id="debug-reg-15"></span>
+  </div>
+</div>
 </body>
 </html>

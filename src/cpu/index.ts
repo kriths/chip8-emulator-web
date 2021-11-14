@@ -1,6 +1,21 @@
-import { CLOCK_INTERVAL, MEMORY_OFFSET, MEMORY_SIZE } from '../constants';
+import {
+  CLOCK_INTERVAL, MEMORY_OFFSET, MEMORY_SIZE, PIXEL_SIZE,
+} from '../constants';
 import { get3N, hex } from '../util/number';
 import { Timer } from './timer';
+import { $ } from '../util/html';
+import { PIXEL_SET, PIXEL_UNSET } from '../util/color';
+import FONT_SPRITES from './sprite';
+
+function enableControls(running: boolean) {
+  if (running) {
+    $('play').setAttribute('disabled', '');
+    $('pause').removeAttribute('disabled');
+  } else {
+    $('play').removeAttribute('disabled');
+    $('pause').setAttribute('disabled', '');
+  }
+}
 
 export default class CPU {
   private readonly memory: Uint8Array;
@@ -8,6 +23,14 @@ export default class CPU {
   private readonly registers: Uint8Array;
 
   private readonly stack: Uint16Array;
+
+  private readonly screen: HTMLCanvasElement;
+
+  private readonly pixelData: Uint8Array;
+
+  private readonly pixelsX: number;
+
+  private readonly pixelsY: number;
 
   /**
    * Generic register used to store memory addresses
@@ -30,14 +53,36 @@ export default class CPU {
 
   private nextTick: number;
 
-  constructor() {
+  constructor(canvas: HTMLCanvasElement) {
+    this.screen = canvas;
+    this.pixelsX = canvas.width / PIXEL_SIZE;
+    this.pixelsY = canvas.height / PIXEL_SIZE;
+    this.pixelData = new Uint8Array(this.pixelsX * this.pixelsY);
+
     this.memory = new Uint8Array(MEMORY_SIZE);
     this.registers = new Uint8Array(0x10);
     this.stack = new Uint16Array(0x10);
     this.delayTimer = new Timer();
     this.soundTimer = new Timer();
+    this.reset();
+    this.dumpMemory();
 
     this.tick = this.tick.bind(this);
+  }
+
+  private reset() {
+    this.memory.fill(0);
+    FONT_SPRITES.forEach((sprite, i) => {
+      this.memory.set(sprite, i * 5);
+    });
+
+    this.registers.fill(0);
+    this.stack.fill(0);
+    this.pixelData.fill(0);
+    this.pc = MEMORY_OFFSET;
+    this.sp = 0;
+    this.regI = 0;
+    this.clearScreen();
   }
 
   private tick() {
@@ -53,8 +98,7 @@ export default class CPU {
       case 0x0: {
         switch (instr2) {
           case 0xe0: // 00E0 - CLS
-            // TODO
-            this.failOnInstruction(this.pc - 2, instr1, instr2);
+            this.clearScreen();
             break;
           case 0xee: // 00EE - RET
             this.pc = this.stack[this.sp];
@@ -179,8 +223,12 @@ export default class CPU {
         break;
       }
       case 0xd: { // Dxyn - DRW Vx, Vy, nibble
-        // TODO
-        this.failOnInstruction(this.pc - 2, instr1, instr2);
+        const x: Uint4 = instr1 & 0xf;
+        const y: Uint4 = instr2 >> 4;
+        const size: Uint4 = instr2 & 0xf;
+        const sprite = this.memory.slice(this.regI, this.regI + size);
+        const unset = this.drawSprite(this.registers[x], this.registers[y], sprite);
+        this.registers[0xf] = unset ? 1 : 0;
         break;
       }
       case 0xe: { // Keyboard listeners
@@ -188,11 +236,11 @@ export default class CPU {
           case 0x9e: // Ex9E - SKP Vx
             // TODO
             this.failOnInstruction(this.pc - 2, instr1, instr2);
-            break;
+            return;
           case 0xa1: // ExA1 - SKNP Vx
             // TODO
             this.failOnInstruction(this.pc - 2, instr1, instr2);
-            break;
+            return;
           default:
             this.failOnInstruction(this.pc - 2, instr1, instr2);
             return;
@@ -208,7 +256,7 @@ export default class CPU {
           case 0x0a: // Fx0A - LD Vx, K
             // TODO
             this.failOnInstruction(this.pc - 2, instr1, instr2);
-            break;
+            return;
           case 0x15: // Fx15 - LD DT, Vx
             this.delayTimer.set(this.registers[x]);
             break;
@@ -219,13 +267,15 @@ export default class CPU {
             this.regI += this.registers[x];
             break;
           case 0x29: // LD F, Vx
-            // TODO
-            this.failOnInstruction(this.pc - 2, instr1, instr2);
+            this.regI = x * 5;
             break;
-          case 0x33: // LD B, Vx
-            // TODO
-            this.failOnInstruction(this.pc - 2, instr1, instr2);
+          case 0x33: { // LD B, Vx
+            const reg = this.registers[x];
+            this.memory[this.regI] = reg / 100;
+            this.memory[this.regI] = (reg / 10) % 10;
+            this.memory[this.regI] = reg % 10;
             break;
+          }
           case 0x55: // Fx55 - LD [I], Vx
             this.memory.set(this.registers.slice(0, x + 1), this.regI);
             break;
@@ -246,32 +296,76 @@ export default class CPU {
     this.nextTick = window.setTimeout(this.tick, CLOCK_INTERVAL);
   }
 
+  private clearScreen() {
+    const context = this.screen.getContext('2d');
+    context.clearRect(0, 0, this.screen.width, this.screen.height);
+  }
+
+  private drawSprite(x: number, y: number, sprite: Uint8Array): boolean {
+    const context = this.screen.getContext('2d');
+    let unset = 0;
+    sprite.forEach((spritePx, spriteY) => {
+      if (spritePx === 0) return; // Nothing to do
+
+      const screenY = (y + spriteY) % this.pixelsY;
+      for (let xi = 0; xi < 7; xi += 1) { // Iterate over pixels in sprite line
+        const screenX = (x + xi) % this.pixelsX;
+        const index = (screenY * this.pixelsY) + screenX;
+        const newPx = (spritePx >> (7 - xi)) & 1; // Read new pixel value from sprite line
+        unset |= this.pixelData[index] & newPx; // Track if pixel is being unset
+        this.pixelData[index] ^= newPx;
+
+        context.fillStyle = this.pixelData[index] ? PIXEL_SET : PIXEL_UNSET;
+        context.fillRect(
+          screenX * PIXEL_SIZE,
+          screenY * PIXEL_SIZE,
+          PIXEL_SIZE,
+          PIXEL_SIZE,
+        );
+      }
+    });
+
+    return unset !== 0;
+  }
+
   private failOnInstruction(pc: Uint16, instr1: Uint8, instr2: Uint8) {
     const registerContent = Array.from(this.registers).map((r) => hex(r)).join(' ');
+    // eslint-disable-next-line no-console
     console.error(`Instruction not implemented 0x${hex(pc, 4)}: ${hex(instr1)}${hex(instr2)}
 I: ${hex(this.regI, 4)}, SP: ${hex(this.sp)}, REGS: ${registerContent}`);
     this.pause();
   }
 
+  private dumpMemory() {
+    $('debug-pc').innerText = hex(this.pc, 4);
+    $('debug-sp').innerText = hex(this.sp);
+    $('debug-dt').innerText = hex(this.delayTimer.get());
+    $('debug-st').innerText = hex(this.soundTimer.get());
+    this.registers.forEach((val, i) => {
+      $(`debug-reg-${i}`).innerText = hex(val);
+    });
+  }
+
   public loadExecutable(executable: Uint8Array) {
     this.pause();
-
-    // Reset memory and registers
-    this.memory.fill(0);
-    this.registers.fill(0);
-    this.stack.fill(0);
-    this.pc = MEMORY_OFFSET;
-    this.sp = 0;
-    this.regI = 0;
-
+    this.reset();
     this.memory.set(executable, MEMORY_OFFSET);
+    this.dumpMemory();
+    enableControls(false);
   }
 
   public run() {
     this.tick();
+    this.delayTimer.tick();
+    this.soundTimer.tick();
+    enableControls(true);
   }
 
   public pause() {
     window.clearTimeout(this.nextTick);
+    this.delayTimer.pause();
+    this.soundTimer.pause();
+    this.dumpMemory();
+    enableControls(false);
   }
 }
