@@ -274,7 +274,7 @@ export default class CPU {
             this.regI += this.registers[x];
             break;
           case 0x29: // LD F, Vx
-            this.regI = x * 5;
+            this.regI = this.registers[x] * 5;
             break;
           case 0x33: { // LD B, Vx
             const reg = this.registers[x];
