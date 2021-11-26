@@ -317,7 +317,7 @@ export default class CPU {
       const screenY = (y + spriteY) % this.pixelsY;
       for (let xi = 0; xi < 7; xi += 1) { // Iterate over pixels in sprite line
         const screenX = (x + xi) % this.pixelsX;
-        const index = (screenY * this.pixelsY) + screenX;
+        const index = (screenY * this.pixelsX) + screenX;
         const newPx = (spritePx >> (7 - xi)) & 1; // Read new pixel value from sprite line
         unset |= this.pixelData[index] & newPx; // Track if pixel is being unset
         this.pixelData[index] ^= newPx;
