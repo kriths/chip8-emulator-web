@@ -221,7 +221,7 @@ export default class CPU {
       }
       case 0xc: { // Cxkk - RND Vx, byte
         const reg: Uint4 = instr1 & 0x0f;
-        this.registers[reg] = Math.floor(Math.random() * 0x100);
+        this.registers[reg] = Math.floor(Math.random() * 0x100) & instr2;
         break;
       }
       case 0xd: { // Dxyn - DRW Vx, Vy, nibble
