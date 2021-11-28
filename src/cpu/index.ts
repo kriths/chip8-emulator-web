@@ -235,14 +235,15 @@ export default class CPU {
       }
       case 0xe: { // Keyboard listeners
         const x: Uint4 = instr1 & 0xf;
+        const vx: Uint8 = this.registers[x];
         switch (instr2) {
           case 0x9e: // Ex9E - SKP Vx
-            if (this.keyboard.isPressed(x)) {
+            if (this.keyboard.isPressed(vx)) {
               this.pc += 2;
             }
             break;
           case 0xa1: // ExA1 - SKNP Vx
-            if (!this.keyboard.isPressed(x)) {
+            if (!this.keyboard.isPressed(vx)) {
               this.pc += 2;
             }
             break;
