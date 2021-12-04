@@ -5,7 +5,11 @@ module.exports = {
   ],
   darkMode: false,
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        blocky: ['vtks morning rain', 'SFMono-Regular', 'monospace'],
+      },
+    },
   },
   variants: {
     extend: {

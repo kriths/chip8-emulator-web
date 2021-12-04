@@ -32,6 +32,7 @@ function loadFile() {
     cpu.loadExecutable(data);
     displayLoadStateResult(true);
     $('reload').removeAttribute('disabled');
+    $('canvas-instructions').style.display = 'none';
   };
   fileReader.onerror = () => {
     displayLoadStateResult(false);

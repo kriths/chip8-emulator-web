@@ -2,17 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>CHIP8 Emulator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CHIP-8 Emulator</title>
+  <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/vtks-morning-rain">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+
+  <meta name="description" content="Simple CHIP-8 emulator to run your favorito 70s games.">
+  <meta property="og:title" content="CHIP-8 Emulator">
+  <meta property="og:description" content="Simple CHIP-8 emulator to run your favorito 70s games.">
+  <meta property="og:url" content="https://chip8.tkr.sh/">
+  <meta property="og:image" content="https://chip8.tkr.sh/favicon.svg">
+  <meta property="og:image:alt" content="CHIP-8 emulator favicon">
+  <meta property="og:locale" content="en_GB">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#1f2937">
 </head>
-<body class="antialiased bg-gray-800 text-white">
-<h1>CHIP8 Emulator</h1>
-<div class="flex justify-around items-center">
-  <div class="p-4 rounded-xl bg-black">
+<body class="antialiased bg-gray-800 text-white p-8 flex flex-col items-center">
+<h1 class="text-5xl mb-4 font-blocky font-bold tracking-wider">CHIP-8 Emulator</h1>
+
+<!-- Game, grid and controls -->
+<div class="grid grid-cols-2 justify-around items-center justify-items-center w-full">
+  <!-- Game canvas -->
+  <div class="relative p-4 rounded-xl bg-black 2xl:row-span-2">
     <canvas id="screen" width="640" height="320"></canvas>
+    <div id ="canvas-instructions"
+         class="absolute top-0 w-full h-full grid place-items-center text-center font-blocky">
+      <p>Select executable to start emulator.<br />For details see instructions below.</p>
+    </div>
   </div>
 
-  <div class="space-y-10">
-    <div class="flex flex-col items-center space-y-2">
+  <!-- Controls -->
+  <div class="space-y-10 w-auto">
+    <div class="flex flex-col items-center gap-2">
       <label class="p-4 border border-gray-500 cursor-pointer shadow-lg rounded hover:bg-gray-700 transition">
         <i class="bi bi-upload"></i>
         Select executable...
@@ -28,74 +49,104 @@
       </div>
     </div>
     <div class="flex justify-around">
-      <button id="pause" type="button" class="flex flex-col disabled:opacity-50" disabled>
+      <button id="pause" type="button" class="flex flex-col items-center disabled:opacity-50" disabled>
         <i class="bi bi-pause-circle text-3xl"></i>
         <span>Pause</span>
       </button>
-      <button id="play" type="button" class="flex flex-col disabled:opacity-50" disabled>
+      <button id="play" type="button" class="flex flex-col items-center disabled:opacity-50" disabled>
         <i class="bi bi-play-circle text-3xl"></i>
         <span>Play</span>
       ️</button>
-      <button id="reload" type="button" class="flex flex-col disabled:opacity-50" disabled>
+      <button id="reload" type="button" class="flex flex-col items-center disabled:opacity-50" disabled>
         <i class="bi bi-stop-circle text-3xl"></i>
         <span>Reload</span>
         ️</button>
     </div>
   </div>
-</div>
-<div>
-  <div class="flex justify-around">
-    <div>
-      <span>PC</span>
-      <span id="debug-pc"></span>
+
+  <!-- CPU information and registers -->
+  <div class="col-span-2 2xl:col-span-1 justify-self-stretch font-mono">
+    <div class="flex justify-around">
+      <div>
+        <span>PC</span>
+        <span id="debug-pc"></span>
+      </div>
+      <div>
+        <span>SP</span>
+        <span id="debug-sp"></span>
+      </div>
+      <div>
+        <span>Delay Timer</span>
+        <span id="debug-dt"></span>
+      </div>
+      <div>
+        <span>Sound Timer</span>
+        <span id="debug-st"></span>
+      </div>
     </div>
-    <div>
-      <span>SP</span>
-      <span id="debug-sp"></span>
-    </div>
-    <div>
-      <span>Delay Timer</span>
-      <span id="debug-dt"></span>
-    </div>
-    <div>
-      <span>Sound Timer</span>
-      <span id="debug-st"></span>
+
+    <!-- CPU registers -->
+    <div class="grid grid-flow-col grid-rows-2 justify-items-center border rounded">
+      <span>V0</span>
+      <span id="debug-reg-0"></span>
+      <span>V1</span>
+      <span id="debug-reg-1"></span>
+      <span>V2</span>
+      <span id="debug-reg-2"></span>
+      <span>V3</span>
+      <span id="debug-reg-3"></span>
+      <span>V4</span>
+      <span id="debug-reg-4"></span>
+      <span>V5</span>
+      <span id="debug-reg-5"></span>
+      <span>V6</span>
+      <span id="debug-reg-6"></span>
+      <span>V7</span>
+      <span id="debug-reg-7"></span>
+      <span>V8</span>
+      <span id="debug-reg-8"></span>
+      <span>V9</span>
+      <span id="debug-reg-9"></span>
+      <span>V10</span>
+      <span id="debug-reg-10"></span>
+      <span>V11</span>
+      <span id="debug-reg-11"></span>
+      <span>V12</span>
+      <span id="debug-reg-12"></span>
+      <span>V13</span>
+      <span id="debug-reg-13"></span>
+      <span>V14</span>
+      <span id="debug-reg-14"></span>
+      <span>V15</span>
+      <span id="debug-reg-15"></span>
     </div>
   </div>
-  <div class="grid grid-flow-col grid-rows-2 justify-items-center">
-    <span>V0</span>
-    <span id="debug-reg-0"></span>
-    <span>V1</span>
-    <span id="debug-reg-1"></span>
-    <span>V2</span>
-    <span id="debug-reg-2"></span>
-    <span>V3</span>
-    <span id="debug-reg-3"></span>
-    <span>V4</span>
-    <span id="debug-reg-4"></span>
-    <span>V5</span>
-    <span id="debug-reg-5"></span>
-    <span>V6</span>
-    <span id="debug-reg-6"></span>
-    <span>V7</span>
-    <span id="debug-reg-7"></span>
-    <span>V8</span>
-    <span id="debug-reg-8"></span>
-    <span>V9</span>
-    <span id="debug-reg-9"></span>
-    <span>V10</span>
-    <span id="debug-reg-10"></span>
-    <span>V11</span>
-    <span id="debug-reg-11"></span>
-    <span>V12</span>
-    <span id="debug-reg-12"></span>
-    <span>V13</span>
-    <span id="debug-reg-13"></span>
-    <span>V14</span>
-    <span id="debug-reg-14"></span>
-    <span>V15</span>
-    <span id="debug-reg-15"></span>
-  </div>
 </div>
+
+<h2 class="text-2xl mt-8 mb-4 font-blocky font-bold tracking-wider">Instructions</h2>
+<div class="xl:w-3/5 break-words">
+  <img src="./keyboard-mapping.png" alt="keyboard mapping" class="md:float-right ml-8 w-80 h-auto" />
+  <p class="mb-2">
+    CHIP-8 is a simple programming language used on microcomputers and game consoles in the 70s.
+    It sees no practical application nowadays and is only an educational exercise to practice low-level programing.
+    Many <a href="https://www.zophar.net/pdroms/chip8/chip-8-games-pack.html" class="underline">game ROMs</a>
+    are freely available on the internet .
+  </p>
+  <p class="mb-2">
+    If you can't stop yourself from trying it out: download a ROM, upload it where it says "Select executable...",
+    then hit "Play".
+    Depending on the game or program it might take a few seconds to get running.
+    Mind you, the technology is old and this emulator hardly efficient.
+  </p>
+  <p>
+    The original CHIP-8 keyboard is mapped to a modern QWERTZ / QWERTY keyboard using the mapping in the
+    <span class="md:hidden">above</span> image<span class="hidden md:inline"> to the right</span>.
+  </p>
+</div>
+
+<footer class="mt-6 flex gap-6 text-xs text-gray-400">
+  <a class="underline" href="https://tkr.sh/">Thomas Krisch</a>
+  <a class="underline" href="https://github.com/kriths/chip8-emulator-web">Source</a>
+</footer>
 </body>
 </html>
